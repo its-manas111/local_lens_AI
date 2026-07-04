@@ -1,25 +1,34 @@
 import { GoogleGenAI } from '@google/genai';
+import { sanitizeDestination } from '../utils/sanitize';
+import { checkRateLimit } from '../utils/rateLimit';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-// Structured JSON schema Gemini must return
+// Singleton — one instance for the lifetime of the app session.
+// NOTE: VITE_ prefix exposes this key to the client bundle; this is expected
+// for a purely client-side SPA. For production, proxy via a backend function.
+const genAI = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+
+const LOADING_INTERVAL_MS = 2200;
+export { LOADING_INTERVAL_MS };
+
 const EXPERIENCE_SCHEMA = {
   type: 'object',
   properties: {
-    title: { type: 'string' },
-    tagline: { type: 'string' },
-    story: { type: 'string' },
+    title:    { type: 'string' },
+    tagline:  { type: 'string' },
+    story:    { type: 'string' },
     experiences: {
       type: 'array',
       items: {
         type: 'object',
         properties: {
-          id: { type: 'string' },
-          time: { type: 'string' },
-          title: { type: 'string' },
+          id:          { type: 'string' },
+          time:        { type: 'string' },
+          title:       { type: 'string' },
           description: { type: 'string' },
-          localTip: { type: 'string' },
-          type: { type: 'string' },
+          localTip:    { type: 'string' },
+          type:        { type: 'string' },
         },
         required: ['id', 'time', 'title', 'description', 'localTip', 'type'],
       },
@@ -27,8 +36,8 @@ const EXPERIENCE_SCHEMA = {
     hiddenGem: {
       type: 'object',
       properties: {
-        name: { type: 'string' },
-        story: { type: 'string' },
+        name:      { type: 'string' },
+        story:     { type: 'string' },
         howToFind: { type: 'string' },
       },
       required: ['name', 'story', 'howToFind'],
@@ -36,8 +45,8 @@ const EXPERIENCE_SCHEMA = {
     localHost: {
       type: 'object',
       properties: {
-        name: { type: 'string' },
-        bio: { type: 'string' },
+        name:      { type: 'string' },
+        bio:       { type: 'string' },
         specialty: { type: 'string' },
       },
       required: ['name', 'bio', 'specialty'],
@@ -45,8 +54,8 @@ const EXPERIENCE_SCHEMA = {
     foodMoment: {
       type: 'object',
       properties: {
-        dish: { type: 'string' },
-        story: { type: 'string' },
+        dish:        { type: 'string' },
+        story:       { type: 'string' },
         whereToFind: { type: 'string' },
       },
       required: ['dish', 'story', 'whereToFind'],
@@ -57,10 +66,13 @@ const EXPERIENCE_SCHEMA = {
 };
 
 function buildPrompt({ destination, mood, pace, time, companion }) {
+  // Sanitize destination before interpolating to prevent prompt injection
+  const safeDestination = sanitizeDestination(destination);
+
   return `You are a local experience curator — not a tour guide. You craft deeply immersive, emotional, sensory journeys for travelers who want to feel a place, not just see it.
 
 A traveler has shared the following:
-- Destination: ${destination}
+- Destination: ${safeDestination}
 - Mood / Desired feeling: ${mood}
 - Preferred pace: ${pace === 'slow' ? 'Deep & Slow (fewer experiences, longer lingering)' : 'Active Explorer (wandering far, seeing transitions)'}
 - Time of day preference: ${time}
@@ -79,44 +91,65 @@ Create a single-day immersive local experience itinerary. Follow these rules str
 9. Return ONLY the JSON object matching the schema — no extra commentary.`;
 }
 
-export async function generateExperience(params) {
-  if (!API_KEY) {
-    throw new Error('MISSING_API_KEY');
-  }
+function isValidParsed(parsed) {
+  return (
+    parsed &&
+    typeof parsed.title === 'string' &&
+    typeof parsed.tagline === 'string' &&
+    Array.isArray(parsed.experiences) &&
+    parsed.experiences.length >= 3 &&
+    parsed.hiddenGem &&
+    parsed.localHost &&
+    parsed.foodMoment
+  );
+}
 
-  const genAI = new GoogleGenAI({ apiKey: API_KEY });
+async function callGemini(params, attempt = 1) {
+  const response = await genAI.models.generateContent({
+    model: 'gemini-2.0-flash',
+    contents: buildPrompt(params),
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: EXPERIENCE_SCHEMA,
+      temperature: 0.85,
+      maxOutputTokens: 2048,
+    },
+  });
+
+  const text = response.text();
+  if (!text) {
+    // One automatic retry on empty response (transient Gemini issue)
+    if (attempt < 2) return callGemini(params, attempt + 1);
+    throw new Error('EMPTY_RESPONSE');
+  }
+  return text;
+}
+
+export async function generateExperience(params) {
+  if (!API_KEY) throw new Error('MISSING_API_KEY');
+  if (!checkRateLimit()) throw new Error('RATE_LIMIT');
 
   try {
-    const response = await genAI.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: buildPrompt(params),
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: EXPERIENCE_SCHEMA,
-        temperature: 0.85,
-        maxOutputTokens: 2048,
-      },
-    });
-
-    const text = response.text();
-
-    if (!text) {
-      throw new Error('EMPTY_RESPONSE');
-    }
-
+    const text = await callGemini(params);
     const parsed = JSON.parse(text);
 
-    // Basic validation
-    if (!parsed.title || !parsed.experiences || !Array.isArray(parsed.experiences)) {
+    if (!isValidParsed(parsed)) {
       throw new Error('INVALID_RESPONSE');
     }
 
     return parsed;
   } catch (err) {
-    if (err.message === 'MISSING_API_KEY' || err.message === 'EMPTY_RESPONSE' || err.message === 'INVALID_RESPONSE') {
-      throw err;
+    const knownErrors = new Set(['MISSING_API_KEY', 'EMPTY_RESPONSE', 'INVALID_RESPONSE', 'RATE_LIMIT']);
+    if (knownErrors.has(err.message)) throw err;
+
+    if (
+      err.message?.includes('429') ||
+      err.message?.includes('RESOURCE_EXHAUSTED') ||
+      err.message?.includes('quota')
+    ) {
+      throw new Error('RATE_LIMIT');
     }
-    // Network or SDK error
+
     throw new Error('API_ERROR');
   }
 }

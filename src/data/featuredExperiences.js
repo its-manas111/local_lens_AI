@@ -31,7 +31,7 @@ export const featuredExperiences = [
     id: 3,
     title: "Clay, Fire, and Heritage Mole",
     destination: "Oaxaca, Mexico",
-    mood: "Connected & Sensual",
+    mood: "Connected & Warm",
     feeling: "Gathering around a wood-fired comal to share memories",
     quote: "Escape the craft shops. Spend your afternoon in a backyard kitchen grinding toasted chilies on a basalt metate, surrounded by three generations of family telling stories of their ancestors.",
     host: {
