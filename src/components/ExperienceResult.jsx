@@ -1,24 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   MapPin, Sparkles, Gem, User, Utensils, Clock,
-  Lightbulb, MessageCircle, RotateCcw, ArrowRight
+  MessageCircle, RotateCcw, ArrowRight, Share2, Bookmark, BookmarkCheck,
 } from 'lucide-react';
+import ExperienceCard from './ExperienceCard';
 
-const TYPE_COLORS = {
-  Cultural: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
-  Culinary: 'bg-red-500/10 text-red-700 border-red-500/20',
-  Nature: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
-  Social: 'bg-blue-500/10 text-blue-700 border-blue-500/20',
-  Heritage: 'bg-purple-500/10 text-purple-700 border-purple-500/20',
+const MOOD_ACCENTS = {
+  'Reflective & Regal':     'border-amber-400/25 bg-amber-50/60',
+  'Peaceful & Meditative':  'border-emerald-400/25 bg-emerald-50/60',
+  'Connected & Warm':       'border-rose-400/25 bg-rose-50/60',
+  'Curious & Mysterious':   'border-purple-400/25 bg-purple-50/60',
 };
-
-function Badge({ children, className = '' }) {
-  return (
-    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${className}`}>
-      {children}
-    </span>
-  );
-}
 
 function SectionLabel({ icon: Icon, label }) {
   return (
@@ -29,19 +21,40 @@ function SectionLabel({ icon: Icon, label }) {
   );
 }
 
-export default function ExperienceResult({ data, params, onReset }) {
+export default function ExperienceResult({ data, params, onReset, onSave, isSaved }) {
+  const [copied, setCopied] = useState(false);
+
   if (!data) return null;
 
+  const heroAccent = MOOD_ACCENTS[params?.mood] || 'border-border bg-card';
+
+  const handleShare = async () => {
+    const text = `${data.title}\n"${data.tagline}"\n\n📍 ${params.destination} · ${params.mood}\n\nCrafted by local_lens_AI — travel by feeling, not by checklist.`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: data.title, text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch {
+      // user cancelled share dialog
+    }
+  };
+
   return (
-    <div className="w-full max-w-3xl mx-auto flex flex-col gap-8 pb-16">
+    <div className="w-full max-w-3xl mx-auto flex flex-col gap-8 pb-16 animate-fade-in">
 
       {/* ── Hero Header ── */}
-      <div className="bg-card border border-border rounded-lg p-8 flex flex-col gap-4 shadow-premium">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <div className={`border rounded-lg p-8 flex flex-col gap-4 shadow-premium ${heroAccent}`}>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
           <MapPin className="w-3.5 h-3.5 text-primary" />
           <span>{params.destination}</span>
           <span className="text-border">·</span>
           <span className="italic">{params.mood}</span>
+          <span className="text-border">·</span>
+          <span>{params.companion}</span>
         </div>
         <h1 className="text-3xl md:text-4xl font-bold leading-tight font-serif">
           {data.title}
@@ -59,49 +72,16 @@ export default function ExperienceResult({ data, params, onReset }) {
         <SectionLabel icon={Clock} label="Your Day, Unfolded" />
         <div className="flex flex-col gap-4">
           {data.experiences.map((exp, index) => (
-            <div
-              key={exp.id}
-              className="group bg-card border border-border rounded-lg p-6 flex flex-col gap-4 hover:shadow-premium-hover transition-all duration-300"
-            >
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                    {exp.time}
-                  </span>
-                  <Badge className={TYPE_COLORS[exp.type] || TYPE_COLORS.Cultural}>
-                    {exp.type}
-                  </Badge>
-                </div>
-                <span className="text-xs text-muted-foreground font-medium">
-                  #{String(index + 1).padStart(2, '0')}
-                </span>
-              </div>
-
-              <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
-                {exp.title}
-              </h3>
-
-              <p className="text-muted-foreground font-light text-sm leading-relaxed">
-                {exp.description}
-              </p>
-
-              <div className="flex items-start gap-2.5 bg-accent/8 border border-accent/15 rounded-lg p-3.5">
-                <Lightbulb className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                <p className="text-xs text-foreground/80 font-light leading-relaxed italic">
-                  {exp.localTip}
-                </p>
-              </div>
-            </div>
+            <ExperienceCard key={exp.id} exp={exp} index={index} />
           ))}
         </div>
       </div>
 
-      {/* ── Hidden Gem + Food Moment (side by side on desktop) ── */}
+      {/* ── Hidden Gem + Food Moment ── */}
       <div className="grid md:grid-cols-2 gap-4">
-        {/* Hidden Gem */}
         <div className="bg-secondary/5 border border-secondary/20 rounded-lg p-6 flex flex-col gap-3">
           <SectionLabel icon={Gem} label="Hidden Gem" />
-          <h3 className="font-bold text-lg">{data.hiddenGem.name}</h3>
+          <h3 className="font-bold text-lg font-serif">{data.hiddenGem.name}</h3>
           <p className="text-muted-foreground text-sm font-light leading-relaxed">
             {data.hiddenGem.story}
           </p>
@@ -113,10 +93,9 @@ export default function ExperienceResult({ data, params, onReset }) {
           </div>
         </div>
 
-        {/* Food Moment */}
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 flex flex-col gap-3">
           <SectionLabel icon={Utensils} label="Food Moment" />
-          <h3 className="font-bold text-lg">{data.foodMoment.dish}</h3>
+          <h3 className="font-bold text-lg font-serif">{data.foodMoment.dish}</h3>
           <p className="text-muted-foreground text-sm font-light leading-relaxed">
             {data.foodMoment.story}
           </p>
@@ -132,7 +111,7 @@ export default function ExperienceResult({ data, params, onReset }) {
       {/* ── Local Host ── */}
       <div className="bg-card border border-border rounded-lg p-6 flex items-start gap-5">
         <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
-          {data.localHost.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+          {data.localHost.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
         </div>
         <div className="flex flex-col gap-1.5">
           <SectionLabel icon={User} label="Hosted by a Local" />
@@ -140,10 +119,10 @@ export default function ExperienceResult({ data, params, onReset }) {
           <p className="text-muted-foreground text-sm font-light leading-relaxed">
             {data.localHost.bio}
           </p>
-          <Badge className="w-fit mt-1 bg-accent/10 text-accent-foreground border-accent/20">
+          <span className="w-fit mt-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-accent/10 text-accent-foreground border-accent/20">
             <Sparkles className="w-3 h-3 inline mr-1" />
             {data.localHost.specialty}
-          </Badge>
+          </span>
         </div>
       </div>
 
@@ -158,11 +137,32 @@ export default function ExperienceResult({ data, params, onReset }) {
       {/* ── Actions ── */}
       <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4 border-t border-border/40">
         <button
+          onClick={onSave}
+          disabled={isSaved}
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+            isSaved
+              ? 'bg-secondary/10 text-secondary border border-secondary/20 cursor-default'
+              : 'bg-primary text-primary-foreground hover:bg-primary/95 shadow-sm hover:shadow-premium'
+          }`}
+        >
+          {isSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+          {isSaved ? 'Journey Saved' : 'Save Journey'}
+        </button>
+
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-2 px-6 py-3 border border-border text-muted-foreground rounded-lg text-sm font-semibold hover:text-foreground hover:bg-muted/10 transition-all cursor-pointer"
+        >
+          <Share2 className="w-4 h-4" />
+          {copied ? 'Copied to clipboard!' : 'Share'}
+        </button>
+
+        <button
           onClick={onReset}
           className="flex items-center gap-2 px-6 py-3 border border-border text-muted-foreground rounded-lg text-sm font-semibold hover:text-foreground hover:bg-muted/10 transition-all cursor-pointer"
         >
           <RotateCcw className="w-4 h-4" />
-          Start a New Journey
+          New Journey
         </button>
       </div>
     </div>

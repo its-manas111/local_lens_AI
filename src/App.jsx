@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Compass, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Compass, AlertTriangle, RotateCcw, BookmarkCheck } from 'lucide-react';
 import LandingHero from './components/LandingHero';
 import LandingPhilosophy from './components/LandingPhilosophy';
 import FeaturedFeed from './components/FeaturedFeed';
+import SavedJourneys from './components/SavedJourneys';
 import ExperienceForm from './components/ExperienceForm';
 import LoadingExperience from './components/LoadingExperience';
 import ExperienceResult from './components/ExperienceResult';
 import { generateExperience } from './services/geminiService';
+import { useSavedJourneys } from './hooks/useSavedJourneys';
 
 const ERROR_MESSAGES = {
   MISSING_API_KEY: 'No API key found. Add VITE_GEMINI_API_KEY to your .env.local file.',
@@ -20,8 +22,8 @@ function App() {
   const [journeyParams, setJourneyParams] = useState(null);
   const [experienceData, setExperienceData] = useState(null);
   const [error, setError] = useState(null);
+  const { saved, saveJourney, deleteJourney, isJourneySaved } = useSavedJourneys();
 
-  // Trigger Gemini call when entering the 'generating' step
   useEffect(() => {
     if (step !== 'generating' || !journeyParams) return;
 
@@ -65,6 +67,12 @@ function App() {
     setStep('generating');
   };
 
+  const handleLoadSaved = (journey) => {
+    setExperienceData(journey.data);
+    setJourneyParams(journey.params);
+    setStep('result');
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Sticky Header */}
@@ -79,14 +87,29 @@ function App() {
             </div>
             <span className="font-bold text-lg tracking-tight">local_lens_AI</span>
           </div>
-          {step !== 'landing' && (
-            <button
-              onClick={handleReset}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            >
-              Back to Home
-            </button>
-          )}
+
+          <div className="flex items-center gap-4">
+            {saved.length > 0 && (
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                aria-label={`${saved.length} saved journeys`}
+              >
+                <BookmarkCheck className="w-4 h-4 text-primary" />
+                <span className="text-xs bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                  {saved.length}
+                </span>
+              </button>
+            )}
+            {step !== 'landing' && (
+              <button
+                onClick={handleReset}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                Back to Home
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -97,6 +120,13 @@ function App() {
           <div className="flex flex-col gap-12">
             <LandingHero onBegin={() => setStep('form')} />
             <LandingPhilosophy />
+            {saved.length > 0 && (
+              <SavedJourneys
+                saved={saved}
+                onLoad={handleLoadSaved}
+                onDelete={deleteJourney}
+              />
+            )}
             <FeaturedFeed />
           </div>
         )}
@@ -117,6 +147,8 @@ function App() {
             data={experienceData}
             params={journeyParams}
             onReset={handleReset}
+            onSave={() => saveJourney(experienceData, journeyParams)}
+            isSaved={isJourneySaved(experienceData.title)}
           />
         )}
 
