@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Premium earth-toned palette custom configurations */
+  --color-border: hsl(var(--border));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 0.25rem);
+  --radius-sm: calc(var(--radius) - 0.5rem);
+
+  --shadow-premium: 0 10px 30px -15px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+  --shadow-premium-hover: 0 20px 40px -20px rgba(0, 0, 0, 0.1), 0 8px 16px -8px rgba(0, 0, 0, 0.06);
+}
+
+@layer base {
+  :root {
+    --background: 34 33% 98%;    /* Warm cream/sand */
+    --foreground: 20 14% 15%;    /* Soft dark charcoal */
+    
+    --card: 0 0% 100%;
+    --card-foreground: 20 14% 15%;
+    
+    --primary: 24 75% 50%;       /* Terracotta/Saffron */
+    --primary-foreground: 34 33% 98%;
+    
+    --secondary: 162 45% 25%;     /* Forest/Emerald green */
+    --secondary-foreground: 34 33% 98%;
+    
+    --accent: 38 92% 50%;        /* Rich amber/gold */
+    --accent-foreground: 20 14% 15%;
+    
+    --muted: 24 10% 90%;
+    --muted-foreground: 20 10% 45%;
+
+    --border: 24 15% 92%;
+    --radius: 1.25rem;           /* Generous rounded corners */
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Outfit', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: 'Playfair Display', serif;
+  }
+}
