@@ -46,8 +46,8 @@ export default function ExperienceForm({ onSubmit, onBack }) {
           <span>{Math.round(getStepProgress())}% Complete</span>
         </div>
         <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
-          <div 
-            className="bg-primary h-full transition-all duration-300 ease-out" 
+          <div
+            className="bg-primary h-full transition-all duration-300 ease-out"
             style={{ width: `${getStepProgress()}%` }}
           />
         </div>
@@ -74,11 +74,10 @@ export default function ExperienceForm({ onSubmit, onBack }) {
                   setDestination(dest.name);
                   setCustomDestination('');
                 }}
-                className={`p-5 rounded-lg border text-left flex flex-col gap-2 transition-all duration-300 cursor-pointer ${
-                  destination === dest.name 
-                    ? `border-primary bg-primary/5 shadow-sm` 
+                className={`p-5 rounded-lg border text-left flex flex-col gap-2 transition-all duration-300 cursor-pointer ${destination === dest.name
+                    ? `border-primary bg-primary/5 shadow-sm`
                     : `border-border/60 hover:border-border hover:bg-muted/10`
-                }`}
+                  }`}
               >
                 <span className="font-bold text-lg">{dest.name}</span>
                 <span className="text-primary text-xs font-semibold italic">{dest.tagline}</span>
@@ -124,18 +123,16 @@ export default function ExperienceForm({ onSubmit, onBack }) {
               <button
                 key={moodOpt.id}
                 onClick={() => setSelectedMood(moodOpt.label)}
-                className={`p-6 rounded-lg border text-left flex flex-col gap-3 transition-all duration-300 cursor-pointer ${
-                  selectedMood === moodOpt.label
+                className={`p-6 rounded-lg border text-left flex flex-col gap-3 transition-all duration-300 cursor-pointer ${selectedMood === moodOpt.label
                     ? 'border-primary bg-primary/5 shadow-sm'
                     : 'border-border/60 hover:border-border hover:bg-muted/10'
-                }`}
+                  }`}
               >
                 <span className="font-bold text-lg text-foreground flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${
-                    moodOpt.color === 'amber' ? 'bg-amber-500' :
-                    moodOpt.color === 'emerald' ? 'bg-emerald-600' :
-                    moodOpt.color === 'indigo' ? 'bg-indigo-600' : 'bg-primary'
-                  }`} />
+                  <span className={`w-2.5 h-2.5 rounded-full ${moodOpt.color === 'amber' ? 'bg-amber-500' :
+                      moodOpt.color === 'emerald' ? 'bg-emerald-600' :
+                        moodOpt.color === 'indigo' ? 'bg-indigo-600' : 'bg-primary'
+                    }`} />
                   {moodOpt.label}
                 </span>
                 <span className="text-muted-foreground text-xs font-light leading-relaxed">
@@ -171,11 +168,10 @@ export default function ExperienceForm({ onSubmit, onBack }) {
                 <button
                   key={p.id}
                   onClick={() => setSelectedPace(p.id)}
-                  className={`p-4 rounded-lg border text-left transition-all cursor-pointer ${
-                    selectedPace === p.id 
-                      ? 'border-primary bg-primary/5' 
+                  className={`p-4 rounded-lg border text-left transition-all cursor-pointer ${selectedPace === p.id
+                      ? 'border-primary bg-primary/5'
                       : 'border-border/60 hover:bg-muted/10'
-                  }`}
+                    }`}
                 >
                   <div className="font-bold text-sm">{p.label}</div>
                   <div className="text-muted-foreground text-xs font-light mt-0.5">{p.description}</div>
@@ -195,11 +191,10 @@ export default function ExperienceForm({ onSubmit, onBack }) {
                 <button
                   key={time}
                   onClick={() => setSelectedTime(time)}
-                  className={`px-4 py-2 text-xs font-semibold rounded-full border transition-all cursor-pointer ${
-                    selectedTime === time
+                  className={`px-4 py-2 text-xs font-semibold rounded-full border transition-all cursor-pointer ${selectedTime === time
                       ? 'bg-foreground text-background border-foreground'
                       : 'border-border/80 text-muted-foreground hover:border-border'
-                  }`}
+                    }`}
                 >
                   {time}
                 </button>
@@ -218,11 +213,10 @@ export default function ExperienceForm({ onSubmit, onBack }) {
                 <button
                   key={comp}
                   onClick={() => setSelectedCompanion(comp)}
-                  className={`px-4 py-2 text-xs font-semibold rounded-full border transition-all cursor-pointer ${
-                    selectedCompanion === comp
+                  className={`px-4 py-2 text-xs font-semibold rounded-full border transition-all cursor-pointer ${selectedCompanion === comp
                       ? 'bg-foreground text-background border-foreground'
                       : 'border-border/80 text-muted-foreground hover:border-border'
-                  }`}
+                    }`}
                 >
                   {comp}
                 </button>
@@ -241,7 +235,7 @@ export default function ExperienceForm({ onSubmit, onBack }) {
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-        
+
         <button
           onClick={handleNext}
           disabled={
@@ -249,13 +243,12 @@ export default function ExperienceForm({ onSubmit, onBack }) {
             (formStep === 1 && destination === 'custom' && !customDestination) ||
             (formStep === 2 && !selectedMood)
           }
-          className={`px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${
-            ((formStep === 1 && !destination) ||
-             (formStep === 1 && destination === 'custom' && !customDestination) ||
-             (formStep === 2 && !selectedMood)) 
+          className={`px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer ${((formStep === 1 && !destination) ||
+              (formStep === 1 && destination === 'custom' && !customDestination) ||
+              (formStep === 2 && !selectedMood))
               ? 'opacity-40 cursor-not-allowed'
               : 'hover:bg-primary/95 hover:shadow-sm'
-          }`}
+            }`}
         >
           {formStep === 3 ? 'Generate Journey' : 'Continue'}
           <ArrowRight className="w-4 h-4" />
